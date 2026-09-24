@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Η κλήση μας</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; text-align: center; background-color: #1a1a1a; color: white; padding: 15px; margin: 0; }
+        video { width: 100%; max-width: 400px; height: 250px; margin: 10px 0; border-radius: 12px; background: #000; object-fit: cover; }
+        input, button { padding: 14px; margin: 5px; border-radius: 8px; font-size: 16px; width: 90%; max-width: 300px; border: none; }
+        button { background-color: #34C759; color: white; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .id-box { background: #2c2c2e; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <h2>Η κλήση μας 👩‍❤️‍👨</h2>
+    
+    <div class="id-box">
+        <p style="margin: 0;">Το ID σου: <br><span id="my-id" style="color: #34C759; font-weight: bold; font-size: 20px;">Φόρτωση...</span></p>
+    </div>
+
+    <!-- Το playsinline είναι υποχρεωτικό για το iPhone -->
+    <video id="local-video" autoplay muted playsinline></video>
+    <video id="remote-video" autoplay playsinline></video>
+
+    <div>
+        <input type="text" id="partner-id" placeholder="Επικόλληση το ID της κοπέλας σου">
+        <button id="call-btn">Κλήση</button>
+    </div>
+
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <script>
+        const peer = new Peer();
+        let localStream;
+
+        peer.on('open', id => {
+            document.getElementById('my-id').textContent = id;
+        });
+
+        // Ζητάει άδεια για κάμερα/μικρόφωνο
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                localStream = stream;
+                document.getElementById('local-video').srcObject = stream;
+            })
+            .catch(err => alert('Πρέπει να πατήσεις "Επιτρέπεται" για την κάμερα!'));
+
+        // Όταν σε καλεί εκείνη
+        peer.on('call', call => {
+            call.answer(localStream);
+            call.on('stream', remoteStream => {
+                document.getElementById('remote-video').srcObject = remoteStream;
+            });
+        });
+
+        // Όταν την καλείς εσύ
+        document.getElementById('call-btn').addEventListener('click', () => {
+            const partnerId = document.getElementById('partner-id').value;
+            if (!partnerId) return alert('Βάλε πρώτα το ID!');
+            
+            const call = peer.call(partnerId, localStream);
+            call.on('stream', remoteStream => {
+                document.getElementById('remote-video').srcObject = remoteStream;
+            });
+        });
+    </script>
+</body>
+</html>
